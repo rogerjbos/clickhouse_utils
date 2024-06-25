@@ -14,7 +14,7 @@ def main():
         load_dotenv('/Users/rogerbos/R_HOME/clickhouse_utils/.env')
 
     # Retrieve environment variables
-    ch_host = os.getenv('CLICKHOUSE_HOST') #'vdib5n7pan.europe-west4.gcp.clickhouse.cloud'
+    ch_host = os.getenv('CLICKHOUSE_HOST')
     ch_user = os.getenv('CLICKHOUSE_USER')
     ch_password = os.getenv('CLICKHOUSE_PASSWORD')
     default_pw = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
