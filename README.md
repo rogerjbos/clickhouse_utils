@@ -57,3 +57,5 @@ This is the key function of this library, since clickhouse does not automaticall
 Using `append=True` (the default) will add the passed DataFrame to the existing table or create one if it doesn't already exist.  Using `append=False` will drop the current table (if it exists) and create a new table, so be careful with this setting.
 
 ### test
+
+test 2
