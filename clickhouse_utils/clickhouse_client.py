@@ -3,14 +3,21 @@ import os
 import pandas as pd
 import clickhouse_connect
 from typing import List, Union
+from dotenv import load_dotenv
+
+# Load environment variables
+if load_dotenv():
+    pass
+else:
+    load_dotenv('/Users/rogerbos/R_HOME/clickhouse_utils/.env')
 
 class ClickhouseClient:
-    def __init__(self, host: str, port: int, username: str, password: str, default_password: str):
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
-        self.default_password = default_password
+    def __init__(self):
+        self.host = os.getenv('CLICKHOUSE_HOST')
+        self.port = os.getenv('CLICKHOUSE_PORT')
+        self.username = os.getenv('CLICKHOUSE_USER')
+        self.password = os.getenv('CLICKHOUSE_PASSWORD')
+        self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
         self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password)
 
     @staticmethod
