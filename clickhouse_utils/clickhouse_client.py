@@ -84,6 +84,9 @@ class ClickhouseClient:
     def query(self, txt: str) -> pd.DataFrame:
         return self.client.query_df(txt)
 
+    def command(self, txt: str) -> None:
+        self.client.command(txt)
+
     def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, append: bool, show: bool = False) -> None:
         columns = data_frame.columns
         dtypes = data_frame.dtypes
