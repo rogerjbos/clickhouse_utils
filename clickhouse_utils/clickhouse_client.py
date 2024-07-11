@@ -14,7 +14,7 @@ else:
 class ClickhouseClient:
     def __init__(self):
         self.host = os.getenv('CLICKHOUSE_HOST')
-        self.port = os.getenv('CLICKHOUSE_PORT')
+        self.port = int(os.getenv('CLICKHOUSE_PORT'))
         self.username = os.getenv('CLICKHOUSE_USER')
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')

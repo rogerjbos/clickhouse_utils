@@ -6,10 +6,10 @@ from clickhouse_client import ClickhouseClient
 def main():
 
     # Initialize Clickhouse client
-    ch_client = ClickhouseClient()
+    ch = ClickhouseClient()
 
     # Example usage of ClickhouseClient methods
-    databases = ch_client.show_databases()
+    databases = ch.show_databases()
     print(f"Databases: {databases}")
   
     # ch_client.create_database("synthetix")
