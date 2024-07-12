@@ -1,15 +1,15 @@
 # Add the clickhouse_utils folder to sys.path so we can import it
 import sys
-sys.path.append('/Users/rogerbos/R_HOME/clickhouse_utils/clickhouse_utils')
+sys.path.append('/srv/clickhouse_utils/clickhouse_utils')
 from clickhouse_client import ClickhouseClient
 
 def main():
 
     # Initialize Clickhouse client
-    ch_client = ClickhouseClient()
+    ch = ClickhouseClient()
 
     # Example usage of ClickhouseClient methods
-    databases = ch_client.show_databases()
+    databases = ch.show_databases()
     print(f"Databases: {databases}")
   
     # ch_client.create_database("synthetix")

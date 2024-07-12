@@ -9,12 +9,13 @@ from dotenv import load_dotenv
 if load_dotenv():
     pass
 else:
-    load_dotenv('/Users/rogerbos/R_HOME/clickhouse_utils/.env')
+    load_dotenv('/srv/clickhouse_utils/.env')
 
+# self = ClickhouseClient
 class ClickhouseClient:
     def __init__(self):
         self.host = os.getenv('CLICKHOUSE_HOST')
-        self.port = os.getenv('CLICKHOUSE_PORT')
+        self.port = int(os.getenv('CLICKHOUSE_PORT'))
         self.username = os.getenv('CLICKHOUSE_USER')
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
@@ -72,10 +73,16 @@ class ClickhouseClient:
             return out.name.to_list()
 
     def drop_table(self, table: str) -> None:
-        self.client.command(f"DROP TABLE IF EXISTS {table}")
-
+        try:
+          self.client.command(f"DROP TABLE IF EXISTS {table}")
+        except:
+          print(f"Table {table} does not exist to drop.")
+          
     def show_table_create(self, table: str) -> None:
-        print(self.client.command(f'SHOW CREATE TABLE {table}'))
+        try:
+          print(self.client.command(f'SHOW CREATE TABLE {table}'))
+        except:
+          print(f"Table {table} does not exist to show.")
 
     def table_exists(self, table: str) -> bool:
         database, table = table.split('.')
@@ -87,12 +94,17 @@ class ClickhouseClient:
     def command(self, txt: str) -> None:
         self.client.command(txt)
 
+    def command_admin(self, txt: str) -> None:
+        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client.command(txt)
+
     def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, append: bool, show: bool = False) -> None:
         columns = data_frame.columns
         dtypes = data_frame.dtypes
 
         primary_keys_list = [key.strip() for key in primary_keys.split(',')]
         low_cardinality_columns = ['chain', 'chain_name', 'relay', 'relay_chain']
+        date_columns = ['date', 'month']
         list_columns = [col for col in data_frame.columns if self.is_list_column(data_frame[col])]
         none_type_columns = [col for col in data_frame.columns if data_frame[col].isna().all()]
 
@@ -102,6 +114,8 @@ class ClickhouseClient:
         for column, dtype in zip(columns, dtypes):
             if column in low_cardinality_columns:
                 column_type = "LowCardinality(String)"
+            elif column in low_cardinality_columns:
+                column_type = "Date"
             elif pd.api.types.is_integer_dtype(dtype):
                 column_type = "Int32"
             elif pd.api.types.is_float_dtype(dtype):
@@ -131,10 +145,10 @@ class ClickhouseClient:
         self.client.command(create_table_query)
         print(f"Table created: {table}")
 
-    def save(self, data_frame: pd.DataFrame, table: str, primary_keys: Union[str, None] = None, append: bool = True) -> None:
+    def save(self, data_frame: pd.DataFrame, table: str, primary_keys: Union[str, None] = None, append: bool = True, show: bool = False, ) -> None:
         tbl_exists = self.table_exists(table)
-        if not tbl_exists or not append:
-            self.create_table(data_frame, table, primary_keys, append)
+        if not tbl_exists or not append or show:
+            self.create_table(data_frame, table, primary_keys, append, show)
 
         date_without_time_columns = [col for col in data_frame.columns if self.has_date_without_time(data_frame[col])]
         for col in date_without_time_columns:
