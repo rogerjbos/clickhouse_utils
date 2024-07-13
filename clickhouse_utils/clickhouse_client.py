@@ -9,13 +9,13 @@ from dotenv import load_dotenv
 if load_dotenv():
     pass
 else:
-    load_dotenv('/srv/clickhouse_utils/.env')
+    load_dotenv('/Users/rogerbos/R_HOME/clickhouse_utils/.env')
 
 # self = ClickhouseClient
 class ClickhouseClient:
     def __init__(self):
         self.host = os.getenv('CLICKHOUSE_HOST')
-        self.port = int(os.getenv('CLICKHOUSE_PORT'))
+        self.port = os.getenv('CLICKHOUSE_PORT')
         self.username = os.getenv('CLICKHOUSE_USER')
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
@@ -24,25 +24,6 @@ class ClickhouseClient:
     @staticmethod
     def is_list_column(column: pd.Series) -> bool:
         return column.apply(lambda x: isinstance(x, list)).any()
-
-    @staticmethod
-    def has_date_without_time(series: pd.Series) -> bool:
-        try:
-            converted = pd.to_datetime(series)
-            return all(converted.dt.time == pd.Timestamp('00:00:00').time())
-        except Exception:
-            return False
-
-    @staticmethod
-    def convert_to_date(x: Union[str, datetime.datetime, datetime.date]) -> Union[datetime.date, None]:
-        if isinstance(x, str):
-            return datetime.datetime.strptime(x, '%Y-%m-%d').date()
-        elif isinstance(x, datetime.datetime):
-            return x.date()
-        elif isinstance(x, datetime.date):
-            return x
-        else:
-            return None
 
     def create_database(self, database: str) -> None:
         client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
@@ -112,47 +93,44 @@ class ClickhouseClient:
 
         create_table_query = f"{create_str} {table} ("
         for column, dtype in zip(columns, dtypes):
+            
             if column in low_cardinality_columns:
-                column_type = "LowCardinality(String)"
-            elif column in low_cardinality_columns:
-                column_type = "Date"
+                column_type = "LowCardinality(String) DEFAULT ''"
+            
             elif pd.api.types.is_integer_dtype(dtype):
-                column_type = "Int32"
+                column_type = "Int64 DEFAULT 0"
+            
             elif pd.api.types.is_float_dtype(dtype):
-                column_type = "Float64"
-            elif (column == 'timestamp') | (pd.api.types.is_datetime64_any_dtype(dtype)):
-                column_type = "DateTime64"
+                column_type = "Float64 DEFAULT 0.0"
+            
+            elif (column in date_columns) | (column == 'timestamp') | (pd.api.types.is_datetime64_any_dtype(dtype)):
+                column_type = "DateTime64 DEFAULT '1970-01-01'"
+            
             elif column in none_type_columns:
-                column_type = "String"
+                column_type = "String DEFAULT ''"
+            
             elif column in list_columns:
-                column_type = "Array(String)"
-            elif pd.api.types.is_object_dtype(dtype):
-                try:
-                    pd.to_datetime(data_frame[column])
-                    column_type = "Date"
-                except ValueError:
-                    column_type = "String"
+                column_type = "Nullable(Array(String))"
+            
             else:
-                column_type = "String"
-            if (column not in primary_keys_list) & (column_type != 'Array(String)'):
-                column_type = f"Nullable({column_type})"
+                column_type = "String DEFAULT ''"
+            
             create_table_query += f"{column} {column_type}, "
 
         create_table_query = create_table_query.rstrip(", ") + f") ENGINE = ReplacingMergeTree ORDER BY ({primary_keys}) SETTINGS index_granularity = 8192"
         if show:
             print(create_table_query)
-            return None
         self.client.command(create_table_query)
         print(f"Table created: {table}")
 
-    def save(self, data_frame: pd.DataFrame, table: str, primary_keys: Union[str, None] = None, append: bool = True, show: bool = False, ) -> None:
-        tbl_exists = self.table_exists(table)
+    def save(self, data_frame: pd.DataFrame, table: str, primary_keys = None, append: bool = True, show: bool = False) -> None:
+
+        # test if table already exists
+        database_name, table_name = table.split('.')
+        tbl_exists = self.client.command(f"SELECT count() FROM system.tables WHERE database = '{database_name}' AND name = '{table_name}'") > 0
         if not tbl_exists or not append or show:
             self.create_table(data_frame, table, primary_keys, append, show)
 
-        date_without_time_columns = [col for col in data_frame.columns if self.has_date_without_time(data_frame[col])]
-        for col in date_without_time_columns:
-            data_frame[col] = data_frame[col].apply(self.convert_to_date)
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
