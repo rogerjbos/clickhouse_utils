@@ -1,8 +1,8 @@
 # Add the clickhouse_utils folder to sys.path so we can import it
-import sys
-sys.path.append('/home/rogerbos/R_HOME/clickhouse_utils/clickhouse_utils')
-from clickhouse_client import ClickhouseClient
 import pandas as pd
+import sys
+sys.path.append('/srv/clickhouse_utils/clickhouse_utils')
+from clickhouse_client import ClickhouseClient
 
 def main():
 
@@ -13,8 +13,13 @@ def main():
     databases = ch.show_databases()
     print(f"Databases: {databases}")
 
-    ch.show_tables("default")
-    ch.drop_table("dates_tbl1")
+
+    # create a new database
+    ch.create_database("test")
+    # grant access to the user
+    ch.grant_admin("test", "roger")
+
+    ch.show_tables("test")
 
     json = '{"customerId":1,"type":1,"custom_num1":4711}\n{"customerId":2, "type":2,"custom_ips":["127.0.0.1","127.0.0.2"]}'
     # Use FORMAT table function to work directly on data
@@ -23,23 +28,25 @@ def main():
 
     # create some sample data and test saving to a table
     dates = ch.query("SELECT number, CONCAT('a', toString(number)) AS id, now() - number AS previousTimes, toDate(now()) + number AS date FROM numbers(10)")
-    ch.save(data_frame = dates, table="default.dates_tbl1", primary_keys = "previousTimes", append = False, show = False)
-    ch.save(data_frame = dates, table="default.dates_tbl1")
-    # ch.command("delete from default.dates_tbl1 where 1=1")
-    ch.query("select * from default.dates_tbl1 FINAL")
+    dates.dtypes
+    ch.save(data_frame = dates, table="test.dates_tbl1", primary_keys = "previousTimes", append = False, show = True)
+    ch.save(data_frame = dates, table="test.dates_tbl1")
+    # ch.command("delete from test.dates_tbl1 where 1=1")
+    ch.query("select * from test.dates_tbl1 FINAL")
 
 
     # test CSV insert and writing
     table = "dates_tbl1"
     # need to remove timezone offset or else clickhouse won't be able to parse the column
-    dates['previousTimes'] = dates['previousTimes'].dt.tz_convert('UTC').dt.tz_localize(None)
-    dates.to_csv(f"{table}.csv", index=False)
+    try:
+      dates['previousTimes'] = dates['previousTimes'].dt.tz_convert('UTC').dt.tz_localize(None)
+    dates.to_csv(f"/srv/{table}.csv", index=False)
     # insert csv file into clickhouse
-    ch.local_insert_csv(f"default.{table}", f'{table}.csv')
-    ch.query(f"select * from default.{table}")
+    ch.cloud_from_csv(f"test.{table}", f'/srv/{table}.csv')
+    ch.query(f"select * from test.{table} FINAL")
 
     # write csv file from query
-    ch.local_save_csv(f"select * from default.{table}", f"{table}_out.csv") 
+    ch.cloud_to_csv(f"select * from test.{table}", f"/srv/{table}_out.csv") 
     df_out = pd.read_csv(f"{table}_out.csv")
 
     
