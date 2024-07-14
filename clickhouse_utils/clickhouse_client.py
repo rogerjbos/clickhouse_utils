@@ -1,6 +1,7 @@
 import datetime
 import os
 import pandas as pd
+import subprocess
 import clickhouse_connect
 from typing import List, Union
 from dotenv import load_dotenv
@@ -143,3 +144,21 @@ class ClickhouseClient:
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
+    def local_insert_csv(self, table: str, path: str) -> None:
+        command = f'/usr/bin/clickhouse-client --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        result = subprocess.call(command, shell=True)
+
+    def local_save_csv(self, query: str, path: str) -> None:
+        command = f'/usr/bin/clickhouse-client --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+        result = subprocess.call(command, shell=True)
+
+    def cloud_insert_csv(self, table: str, path: str) -> None:
+        command = f'/usr/bin/clickhouse-client --host "{self.host}" --secure --port 9440 --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        result = subprocess.call(command, shell=True)
+
+    def cloud_save_csv(self, query: str, path: str) -> None:
+        command = f'/usr/bin/clickhouse-client --host "{self.host}" --secure --port 9440 --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+        result = subprocess.call(command, shell=True)
+
+
+    # clickhouse-client --query="SELECT * FROM my_table" --format=CSV > output.csv
