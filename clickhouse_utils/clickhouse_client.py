@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 if load_dotenv():
     pass
 else:
-    load_dotenv('/Users/rogerbos/R_HOME/clickhouse_utils/.env')
+    load_dotenv('/home/rogerbos/R_HOME/clickhouse_utils/.env')
 
 # self = ClickhouseClient
 class ClickhouseClient:
@@ -29,9 +29,13 @@ class ClickhouseClient:
         client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
         client.command(f"CREATE DATABASE IF NOT EXISTS {database}")
 
+    def create_user(self, user: str, password: str) -> None:
+        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client.command(f"CREATE USER {user} IDENTIFIED BY '{password}';")
+
     def grant_admin(self, database: str, user: str) -> None:
         client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
-        client.command(f"GRANT SELECT, CREATE, DROP, ALTER, OPTIMIZE, INSERT ON {database}.* TO {user};")
+        client.command(f"GRANT CREATE, ALTER, DROP, SHOW, INSERT, SELECT, UPDATE, DELETE, TRUNCATE, OPTIMIZE ON {database}.* TO {user};")
 
     def grant_read_only(self, database: str) -> None:
         client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
@@ -46,7 +50,7 @@ class ClickhouseClient:
             return out.name.to_list()
 
     def show_databases(self) -> List[str]:
-        out = self.client.query_df("SHOW DATABASES")
+        out = self.client.query_df("SELECT name FROM system.databases WHERE name NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA');")
         if len(out) == 0:
             print("Empty")
             return []
@@ -57,13 +61,13 @@ class ClickhouseClient:
         try:
           self.client.command(f"DROP TABLE IF EXISTS {table}")
         except:
-          print(f"Table {table} does not exist to drop.")
+          print(f"Table {table} does not exist to drop")
           
     def show_table_create(self, table: str) -> None:
         try:
           print(self.client.command(f'SHOW CREATE TABLE {table}'))
         except:
-          print(f"Table {table} does not exist to show.")
+          print(f"Table {table} does not exist to show")
 
     def table_exists(self, table: str) -> bool:
         database, table = table.split('.')
@@ -89,9 +93,14 @@ class ClickhouseClient:
         list_columns = [col for col in data_frame.columns if self.is_list_column(data_frame[col])]
         none_type_columns = [col for col in data_frame.columns if data_frame[col].isna().all()]
 
-        create_str = "CREATE TABLE IF NOT EXISTS" if append else "CREATE OR REPLACE TABLE"
+        if self.table_exists(table):
+          if append == False:
+            print(f"Drop table: {table}")
+            self.drop_table(table)
+          else:
+            print(f"Error: Table {table} already exists.")
 
-        create_table_query = f"{create_str} {table} ("
+        create_table_query = f"CREATE TABLE IF NOT EXISTS {table} ("
         for column, dtype in zip(columns, dtypes):
             
             if column in low_cardinality_columns:
