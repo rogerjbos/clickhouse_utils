@@ -14,7 +14,8 @@ class ClickhouseClient:
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
         self.secure = os.getenv('CLICKHOUSE_SECURE')
-        print(f"{self.host} {self.port} {self.username} {self.password}")
+        self.binary = os.getenv('CLICKHOUSE_BIN')
+        # print(f"{self.host} {self.port} {self.username} {self.password}")
         if self.secure==True:
           self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password, secure=True)
         else:
@@ -142,29 +143,12 @@ class ClickhouseClient:
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
-    def local_from_csv(self, table: str, path: str) -> None:
-        command = f'/usr/bin/clickhouse-client --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-        print(command)
-        result = subprocess.call(command, shell=True)
-
-    def local_to_csv(self, query: str, path: str) -> None:
-        command = f'/usr/bin/clickhouse-client --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
-        print(command)
-        result = subprocess.call(command, shell=True)
-
     def from_csv(self, table: str, path: str) -> None:
-      if self.secure==True:
-        command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-      else:
-        # command = f'/usr/bin/clickhouse-client --user="default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-        command = f'~/clickhouse client --host="{self.host}" --user="default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-      print(command)
+      secure_str = '--secure' if self.secure==True else ''
+      command = f'{self.binary} --host={self.host} --user={self.username} --password={self.password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
       result = subprocess.call(command, shell=True)
 
     def to_csv(self, query: str, path: str) -> None:
-      if self.secure==True:
-        command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
-      else:
-        command = f'/usr/bin/clickhouse-client --host="{self.host}" --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
-      print(command)
+      secure_str = '--secure' if self.secure==True else ''
+      command = f'{self.binary} --host="{self.host}" --user={self.username} --password={self.password} {secure_str} -q "{query}" --format=CSV > {path}'
       result = subprocess.call(command, shell=True)

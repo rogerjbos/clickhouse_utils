@@ -41,10 +41,9 @@ def main():
     # need to remove timezone offset or else clickhouse won't be able to parse the column
     try:
       dates['previousTimes'] = dates['previousTimes'].dt.tz_convert('UTC').dt.tz_localize(None)
-    dates.to_csv(f"~/R_HOME/{table}.csv", index=False)
+    dates.to_csv(f"{table}.csv", index=False)
     # insert csv file into clickhouse
-    ch.from_csv(f"test.{table}", f'~/R_HOME/{table}.csv')
-    ch.local_from_csv(f"test.{table}", f'~/R_HOME/{table}.csv')
+    ch.from_csv(f"test.{table}", f'{table}.csv')
     ch.query(f"select * from test.{table} FINAL")
    
     # write csv file from query
