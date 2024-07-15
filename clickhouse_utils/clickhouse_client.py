@@ -14,9 +14,12 @@ class ClickhouseClient:
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
         self.secure = os.getenv('CLICKHOUSE_SECURE')
-        # print(f"{self.host} {self.port} {self.username} {self.password}")
-        self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password, secure=self.secure)
-
+        print(f"{self.host} {self.port} {self.username} {self.password}")
+        if self.secure==True:
+          self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password, secure=True)
+        else:
+          self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password)
+          
     @staticmethod
     def is_list_column(column: pd.Series) -> bool:
         return column.apply(lambda x: isinstance(x, list)).any()
@@ -153,7 +156,8 @@ class ClickhouseClient:
       if self.secure==True:
         command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
       else:
-        command = f'/usr/bin/clickhouse-client --user="default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        # command = f'/usr/bin/clickhouse-client --user="default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        command = f'~/clickhouse client --host="{self.host}" --user="default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
       print(command)
       result = subprocess.call(command, shell=True)
 
