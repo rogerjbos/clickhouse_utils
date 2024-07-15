@@ -4,13 +4,6 @@ import pandas as pd
 import subprocess
 import clickhouse_connect
 from typing import List, Union
-from dotenv import load_dotenv
-
-# Load environment variables
-if load_dotenv():
-    pass
-else:
-    load_dotenv('/srv/clickhouse_utils/.env')
 
 # self = ClickhouseClient
 class ClickhouseClient:
@@ -20,7 +13,9 @@ class ClickhouseClient:
         self.username = os.getenv('CLICKHOUSE_USER')
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
-        self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password, secure=True)
+        self.secure = os.getenv('CLICKHOUSE_SECURE')
+        # print(f"{self.host} {self.port} {self.username} {self.password}")
+        self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password, secure=self.secure)
 
     @staticmethod
     def is_list_column(column: pd.Series) -> bool:
@@ -144,18 +139,26 @@ class ClickhouseClient:
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
-    def local_from_csv(self, table: str, path: str) -> None:
-        command = f'/usr/bin/clickhouse-client --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-        result = subprocess.call(command, shell=True)
+    # def local_from_csv(self, table: str, path: str) -> None:
+    #     command = f'/usr/bin/clickhouse-client --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+    #     result = subprocess.call(command, shell=True)
+    # 
+    # def local_to_csv(self, query: str, path: str) -> None:
+    #     command = f'/usr/bin/clickhouse-client --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+    #     result = subprocess.call(command, shell=True)
 
-    def local_to_csv(self, query: str, path: str) -> None:
-        command = f'/usr/bin/clickhouse-client --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
-        result = subprocess.call(command, shell=True)
+    def from_csv(self, table: str, path: str) -> None:
+      if self.secure==True:
+        command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+      else:
+        command = f'/usr/bin/clickhouse-client --user="default" --port="{self.port}" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+      print(command)
+      result = subprocess.call(command, shell=True)
 
-    def cloud_from_csv(self, table: str, path: str) -> None:
-        command = f'/usr/bin/clickhouse-client --host "{self.host}" --secure --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-        result = subprocess.call(command, shell=True)
-
-    def cloud_to_csv(self, query: str, path: str) -> None:
-        command = f'/usr/bin/clickhouse-client --host "{self.host}" --secure --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
-        result = subprocess.call(command, shell=True)
+    def to_csv(self, query: str, path: str) -> None:
+      if self.secure==True:
+        command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+      else:
+        command = f'/usr/bin/clickhouse-client --host="{self.host}" --port="{self.port}" --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+      print(command)
+      result = subprocess.call(command, shell=True)

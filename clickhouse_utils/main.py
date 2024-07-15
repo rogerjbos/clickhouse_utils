@@ -1,7 +1,8 @@
 # Add the clickhouse_utils folder to sys.path so we can import it
 import pandas as pd
+import os
 import sys
-sys.path.append('/srv/clickhouse_utils/clickhouse_utils')
+sys.path.append(os.getenv("CLICKHOUSE_PATH"))
 from clickhouse_client import ClickhouseClient
 
 def main():
@@ -29,7 +30,7 @@ def main():
     # create some sample data and test saving to a table
     dates = ch.query("SELECT number, CONCAT('a', toString(number)) AS id, now() - number AS previousTimes, toDate(now()) + number AS date FROM numbers(10)")
     dates.dtypes
-    ch.save(data_frame = dates, table="test.dates_tbl1", primary_keys = "previousTimes", append = False, show = True)
+    ch.save(data_frame = dates, table="test.dates_tbl1", primary_keys = "previousTimes", append = False, show = False)
     ch.save(data_frame = dates, table="test.dates_tbl1")
     # ch.command("delete from test.dates_tbl1 where 1=1")
     ch.query("select * from test.dates_tbl1 FINAL")
@@ -40,11 +41,11 @@ def main():
     # need to remove timezone offset or else clickhouse won't be able to parse the column
     try:
       dates['previousTimes'] = dates['previousTimes'].dt.tz_convert('UTC').dt.tz_localize(None)
-    dates.to_csv(f"/srv/{table}.csv", index=False)
+    dates.to_csv(f"~/R_HOME/{table}.csv", index=False)
     # insert csv file into clickhouse
-    ch.cloud_from_csv(f"test.{table}", f'/srv/{table}.csv')
+    ch.from_csv(f"test.{table}", f'~/R_HOME/{table}.csv')
     ch.query(f"select * from test.{table} FINAL")
-
+    
     # write csv file from query
     ch.cloud_to_csv(f"select * from test.{table}", f"/srv/{table}_out.csv") 
     df_out = pd.read_csv(f"{table}_out.csv")
