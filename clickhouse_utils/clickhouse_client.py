@@ -10,35 +10,35 @@ class ClickhouseClient:
     def __init__(self):
         self.host = os.getenv('CLICKHOUSE_HOST')
         self.port = os.getenv('CLICKHOUSE_PORT')
-        self.username = os.getenv('CLICKHOUSE_USER')
+        self.user = os.getenv('CLICKHOUSE_USER')
         self.password = os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
         self.secure = os.getenv('CLICKHOUSE_SECURE')
         self.binary = os.getenv('CLICKHOUSE_BIN')
-        # print(f"{self.host} {self.port} {self.username} {self.password}")
-        if self.secure==True:
-          self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password, secure=True)
-        else:
-          self.client = clickhouse_connect.get_client(host=self.host, port=self.port, username=self.username, password=self.password)
+        print(f"client = clickhouse_connect.get_client(host={self.host}, user={self.user}, password={self.password}, secure={self.secure})")
+        # if self.secure==True:
+        self.client = clickhouse_connect.get_client(host=self.host, user=self.user, password=self.password, secure=self.secure)
+        # else:
+        #   self.client = clickhouse_connect.get_client(host=self.host, port=self.port, user=self.user, password=self.password)
           
     @staticmethod
     def is_list_column(column: pd.Series) -> bool:
         return column.apply(lambda x: isinstance(x, list)).any()
 
     def create_database(self, database: str) -> None:
-        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(f"CREATE DATABASE IF NOT EXISTS {database}")
 
     def create_user(self, user: str, password: str) -> None:
-        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(f"CREATE USER {user} IDENTIFIED BY '{password}';")
 
     def grant_admin(self, database: str, user: str) -> None:
-        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(f"GRANT CREATE, ALTER, DROP, SHOW, INSERT, SELECT, UPDATE, DELETE, TRUNCATE, OPTIMIZE ON {database}.* TO {user};")
 
     def grant_read_only(self, database: str) -> None:
-        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(f"GRANT SELECT ON {database}.* TO {user};")
 
     def show_tables(self, database: str) -> List[str]:
@@ -50,7 +50,7 @@ class ClickhouseClient:
             return out.name.to_list()
 
     def show_databases(self) -> List[str]:
-        out = self.client.query_df("SELECT name FROM system.databases WHERE name NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA');")
+        out = self.client.query_df("SELECT name FROM system.databases WHERE name NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')")
         if len(out) == 0:
             print("Empty")
             return []
@@ -80,7 +80,7 @@ class ClickhouseClient:
         self.client.command(txt)
 
     def command_admin(self, txt: str) -> None:
-        client = clickhouse_connect.get_client(host=self.host, port=self.port, username='default', password=self.default_password)
+        client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(txt)
 
     def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, append: bool, show: bool = False) -> None:
@@ -143,12 +143,24 @@ class ClickhouseClient:
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
+    def from_csv_user(self, table: str, path: str) -> None:
+      secure_str = '--secure' if self.secure==True else ''
+      command = f'{self.binary} --host={self.host} --user={self.user} --password={self.password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
+      print(command)
+      result = subprocess.call(command, shell=True)
+
+    def to_csv_user(self, query: str, path: str) -> None:
+      secure_str = '--secure' if self.secure==True else ''
+      command = f'{self.binary} --host="{self.host}" --user={self.user} --password={self.password} {secure_str} -q "{query}" --format=CSV > {path}'
+      print(command)
+      result = subprocess.call(command, shell=True)
+
     def from_csv(self, table: str, path: str) -> None:
       secure_str = '--secure' if self.secure==True else ''
-      command = f'{self.binary} --host={self.host} --user={self.username} --password={self.password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
+      command = f'{self.binary} --host={self.host} --user=default --password={self.default_password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
       result = subprocess.call(command, shell=True)
 
     def to_csv(self, query: str, path: str) -> None:
       secure_str = '--secure' if self.secure==True else ''
-      command = f'{self.binary} --host="{self.host}" --user={self.username} --password={self.password} {secure_str} -q "{query}" --format=CSV > {path}'
+      command = f'{self.binary} --host="{self.host}" --user=default --password={self.default_password} {secure_str} -q "{query}" --format=CSV > {path}'
       result = subprocess.call(command, shell=True)
