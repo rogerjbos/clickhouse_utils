@@ -15,12 +15,9 @@ class ClickhouseClient:
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
         self.secure = os.getenv('CLICKHOUSE_SECURE')
         self.binary = os.getenv('CLICKHOUSE_BIN')
-        print(f"client = clickhouse_connect.get_client(host={self.host}, user={self.user}, password={self.password}, secure={self.secure})")
-        # if self.secure==True:
+        # print(f"client = clickhouse_connect.get_client(host={self.host}, user={self.user}, password={self.password}, secure={self.secure})")
         self.client = clickhouse_connect.get_client(host=self.host, user=self.user, password=self.password, secure=self.secure)
-        # else:
-        #   self.client = clickhouse_connect.get_client(host=self.host, port=self.port, user=self.user, password=self.password)
-          
+
     @staticmethod
     def is_list_column(column: pd.Series) -> bool:
         return column.apply(lambda x: isinstance(x, list)).any()
@@ -143,24 +140,18 @@ class ClickhouseClient:
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
-    def from_csv_user(self, table: str, path: str) -> None:
-      secure_str = '--secure' if self.secure==True else ''
-      command = f'{self.binary} --host={self.host} --user={self.user} --password={self.password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
-      print(command)
-      result = subprocess.call(command, shell=True)
+    def from_csv(self, table: str, path: str, admin: bool: False) -> None:
+        secure_str = '--secure' if self.secure==True else ''
+        if admin:
+          command = f'{self.binary} --host={self.host} --user=default --password={self.default_password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        else:
+          command = f'{self.binary} --host={self.host} --user={self.user} --password={self.password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        result = subprocess.call(command, shell=True)
 
-    def to_csv_user(self, query: str, path: str) -> None:
-      secure_str = '--secure' if self.secure==True else ''
-      command = f'{self.binary} --host="{self.host}" --user={self.user} --password={self.password} {secure_str} -q "{query}" --format=CSV > {path}'
-      print(command)
-      result = subprocess.call(command, shell=True)
-
-    def from_csv(self, table: str, path: str) -> None:
-      secure_str = '--secure' if self.secure==True else ''
-      command = f'{self.binary} --host={self.host} --user=default --password={self.default_password} {secure_str} -q "INSERT INTO {table} FORMAT CSV" < {path}'
-      result = subprocess.call(command, shell=True)
-
-    def to_csv(self, query: str, path: str) -> None:
-      secure_str = '--secure' if self.secure==True else ''
-      command = f'{self.binary} --host="{self.host}" --user=default --password={self.default_password} {secure_str} -q "{query}" --format=CSV > {path}'
-      result = subprocess.call(command, shell=True)
+    def to_csv(self, query: str, path: str, admin: bool: False) -> None:
+        secure_str = '--secure' if self.secure==True else ''
+        if admin:
+          command = f'{self.binary} --host="{self.host}" --user=default --password={self.default_password} {secure_str} -q "{query}" --format=CSV > {path}'
+        else:
+          command = f'{self.binary} --host="{self.host}" --user={self.user} --password={self.password} {secure_str} -q "{query}" --format=CSV > {path}'
+        result = subprocess.call(command, shell=True)
