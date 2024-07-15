@@ -44,12 +44,13 @@ def main():
     dates.to_csv(f"~/R_HOME/{table}.csv", index=False)
     # insert csv file into clickhouse
     ch.from_csv(f"test.{table}", f'~/R_HOME/{table}.csv')
+    ch.local_from_csv(f"test.{table}", f'~/R_HOME/{table}.csv')
     ch.query(f"select * from test.{table} FINAL")
-    
+   
     # write csv file from query
-    ch.cloud_to_csv(f"select * from test.{table}", f"/srv/{table}_out.csv") 
-    df_out = pd.read_csv(f"{table}_out.csv")
-
+    ch.to_csv(f"select * from test.{table}", f"~/R_HOME/{table}_out.csv") 
+    df_out = pd.read_csv(f"~/R_HOME/{table}_out.csv")
+    df_out
     
 
 

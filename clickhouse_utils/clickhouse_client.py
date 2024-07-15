@@ -139,19 +139,21 @@ class ClickhouseClient:
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
 
-    # def local_from_csv(self, table: str, path: str) -> None:
-    #     command = f'/usr/bin/clickhouse-client --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
-    #     result = subprocess.call(command, shell=True)
-    # 
-    # def local_to_csv(self, query: str, path: str) -> None:
-    #     command = f'/usr/bin/clickhouse-client --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
-    #     result = subprocess.call(command, shell=True)
+    def local_from_csv(self, table: str, path: str) -> None:
+        command = f'/usr/bin/clickhouse-client --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        print(command)
+        result = subprocess.call(command, shell=True)
+
+    def local_to_csv(self, query: str, path: str) -> None:
+        command = f'/usr/bin/clickhouse-client --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+        print(command)
+        result = subprocess.call(command, shell=True)
 
     def from_csv(self, table: str, path: str) -> None:
       if self.secure==True:
         command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user "default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
       else:
-        command = f'/usr/bin/clickhouse-client --user="default" --port="{self.port}" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
+        command = f'/usr/bin/clickhouse-client --user="default" --password "{self.default_password}" -q "INSERT INTO {table} FORMAT CSV" < {path}'
       print(command)
       result = subprocess.call(command, shell=True)
 
@@ -159,6 +161,6 @@ class ClickhouseClient:
       if self.secure==True:
         command = f'/usr/bin/clickhouse-client --host="{self.host}" --secure --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
       else:
-        command = f'/usr/bin/clickhouse-client --host="{self.host}" --port="{self.port}" --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
+        command = f'/usr/bin/clickhouse-client --host="{self.host}" --user="default" --password="{self.default_password}" -q "{query}" --format=CSV > {path}'
       print(command)
       result = subprocess.call(command, shell=True)
