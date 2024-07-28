@@ -11,9 +11,7 @@ def main():
     ch = ClickhouseClient()
 
     # Example usage of ClickhouseClient methods
-    databases = ch.show_databases()
-    print(f"Databases: {databases}")
-
+    ch.show_databases()
 
     # create a new database
     ch.create_database("test")
@@ -41,14 +39,16 @@ def main():
     # need to remove timezone offset or else clickhouse won't be able to parse the column
     try:
       dates['previousTimes'] = dates['previousTimes'].dt.tz_convert('UTC').dt.tz_localize(None)
-    dates.to_csv(f"{table}.csv", index=False)
+    dates.to_csv(f"/srv/{table}.csv", index=False)
     # insert csv file into clickhouse
-    ch.from_csv(f"test.{table}", f'{table}.csv')
+    ch.from_csv(f"test.{table}", f'/srv/{table}.csv')
+    ch.from_csv_admin(f"test.{table}", f'/srv/{table}.csv')
     ch.query(f"select * from test.{table} FINAL")
    
     # write csv file from query
-    ch.to_csv(f"select * from test.{table}", f"~/R_HOME/{table}_out.csv") 
-    df_out = pd.read_csv(f"~/R_HOME/{table}_out.csv")
+    ch.to_csv(f"select * from test.{table}", f"/srv/{table}_out.csv") 
+    ch.to_csv_admin(f"select * from test.{table}", f"/srv/{table}_out.csv") 
+    df_out = pd.read_csv(f"/srv/{table}_out.csv")
     df_out
     
 
