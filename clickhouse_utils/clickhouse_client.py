@@ -86,7 +86,7 @@ class ClickhouseClient:
 
         primary_keys_list = [key.strip() for key in primary_keys.split(',')]
         low_cardinality_columns = ['chain', 'chain_name', 'relay', 'relay_chain']
-        date_columns = ['date', 'month']
+        # date_columns = ['date', 'month']
         list_columns = [col for col in data_frame.columns if self.is_list_column(data_frame[col])]
         none_type_columns = [col for col in data_frame.columns if data_frame[col].isna().all()]
 
@@ -109,7 +109,7 @@ class ClickhouseClient:
             elif pd.api.types.is_float_dtype(dtype):
                 column_type = "Float64 DEFAULT 0.0"
             
-            elif (column in date_columns) | (column == 'timestamp') | (pd.api.types.is_datetime64_any_dtype(dtype)):
+            elif ((column == 'timestamp') | (pd.api.types.is_datetime64_any_dtype(dtype)):
                 column_type = "DateTime64 DEFAULT '1970-01-01'"
             
             elif column in none_type_columns:
