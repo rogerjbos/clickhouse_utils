@@ -80,10 +80,11 @@ class ClickhouseClient:
         client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(txt)
 
-    def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, append: bool, show: bool = False) -> None:
+    def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, float_column: str, append: bool, show: bool = False) -> None:
         columns = data_frame.columns
         dtypes = data_frame.dtypes
 
+        float_column_list = [] if float_column is None else [key.strip() for key in float_column.split(',')]
         primary_keys_list = [key.strip() for key in primary_keys.split(',')]
         low_cardinality_columns = ['chain', 'chain_name', 'relay', 'relay_chain']
         # date_columns = ['date', 'month']
@@ -103,13 +104,16 @@ class ClickhouseClient:
             if column in low_cardinality_columns:
                 column_type = "LowCardinality(String) DEFAULT ''"
             
+            elif column in float_column:
+                column_type = "Nullable(Float64)"
+            
             elif pd.api.types.is_integer_dtype(dtype):
                 column_type = "Int64 DEFAULT 0"
             
             elif pd.api.types.is_float_dtype(dtype):
                 column_type = "Float64 DEFAULT 0.0"
             
-            elif ((column == 'timestamp') | (pd.api.types.is_datetime64_any_dtype(dtype)):
+            elif column == 'timestamp': # | (pd.api.types.is_datetime64_any_dtype(dtype))
                 column_type = "DateTime64 DEFAULT '1970-01-01'"
             
             elif column in none_type_columns:
@@ -129,13 +133,13 @@ class ClickhouseClient:
         self.client.command(create_table_query)
         print(f"Table created: {table}")
 
-    def save(self, data_frame: pd.DataFrame, table: str, primary_keys = None, append: bool = True, show: bool = False) -> None:
+    def save(self, data_frame: pd.DataFrame, table: str, primary_keys = None, float_column = None, append: bool = True, show: bool = False) -> None:
 
         # test if table already exists
         database_name, table_name = table.split('.')
         tbl_exists = self.client.command(f"SELECT count() FROM system.tables WHERE database = '{database_name}' AND name = '{table_name}'") > 0
         if not tbl_exists or not append or show:
-            self.create_table(data_frame, table, primary_keys, append, show)
+            self.create_table(data_frame, table, primary_keys, float_column, append, show)
 
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
