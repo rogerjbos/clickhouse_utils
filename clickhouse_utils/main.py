@@ -3,12 +3,16 @@ import pandas as pd
 import os
 import sys
 sys.path.append(os.getenv("CLICKHOUSE_PATH"))
-from clickhouse_client import ClickhouseClient
+import clickhouse_client 
 
 def main():
 
+    import importlib
+    importlib.reload(clickhouse_client)
+    ch = clickhouse_client.ClickhouseClient()
+
     # Initialize Clickhouse client
-    ch = ClickhouseClient()
+    ch = clickhouse_client.ClickhouseClient()
 
     # Example usage of ClickhouseClient methods
     ch.show_databases()
@@ -125,6 +129,7 @@ def main():
   tmp2['amount_usd'] = tmp2['amount_usd'].replace('', 0.0)
   tmp2.dtypes
   tmp2.tail(1)
+  ch.save(tmp2, f"daily_etl.transfers", primary_keys = "timestamp, relay_chain, chain", append = False, show=True)
   ch.save(tmp2, f"daily_etl.transfers", primary_keys = "timestamp, relay_chain, chain", float_column = "amount, amount_usd", append = False, show=True)
   ch.query("select * from daily_etl.transfers limit 10")
 

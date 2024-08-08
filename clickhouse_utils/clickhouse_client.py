@@ -80,7 +80,7 @@ class ClickhouseClient:
         client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(txt)
 
-    def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, float_column: str, append: bool, show: bool = False) -> None:
+    def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, float_column: str = '', append: bool = True, show: bool = False) -> None:
         columns = data_frame.columns
         dtypes = data_frame.dtypes
 
@@ -104,7 +104,7 @@ class ClickhouseClient:
             if column in low_cardinality_columns:
                 column_type = "LowCardinality(String) DEFAULT ''"
             
-            elif column in float_column:
+            elif column in float_column_list:
                 column_type = "Nullable(Float64)"
             
             elif pd.api.types.is_integer_dtype(dtype):
