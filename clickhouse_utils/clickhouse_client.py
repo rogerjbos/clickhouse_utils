@@ -80,10 +80,12 @@ class ClickhouseClient:
         client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(txt)
 
-    def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, schema: str = '', append: bool = True, show: bool = False) -> None:
+    def create_table(self, data_frame: pd.DataFrame, table: str, primary_keys: str, schema: str = '', append: bool = True, show: bool = False, replacing: bool = True) -> None:
       columns = data_frame.columns
       dtypes = data_frame.dtypes
   
+      engine = 'ReplacingMergeTree' if replacing else 'MergeTree'
+      
       # Parse column lists
       # json_column_list = [] if json_column is None else [key.strip() for key in json_column.split(',') if key.strip()]
       # float_column_list = [] if float_column is None else [key.strip() for key in float_column.split(',') if key.strip()]
@@ -138,7 +140,7 @@ class ClickhouseClient:
   
           create_table_query += f"{column} {column_type}, "
   
-      create_table_query = create_table_query.rstrip(", ") + f") ENGINE = ReplacingMergeTree ORDER BY ({primary_keys}) SETTINGS index_granularity = 8192"
+      create_table_query = create_table_query.rstrip(", ") + f") ENGINE = {engin} ORDER BY ({primary_keys}) SETTINGS index_granularity = 8192"
       
       if show:
           print(create_table_query)
@@ -146,13 +148,13 @@ class ClickhouseClient:
       self.client.command(create_table_query)
       print(f"Table created: {table}")
       
-    def save(self, data_frame: pd.DataFrame, table: str, primary_keys = None, schema = None, append: bool = True, show: bool = False) -> None:
+    def save(self, data_frame: pd.DataFrame, table: str, primary_keys = None, schema = None, append: bool = True, show: bool = False, replacing: bool = True) -> None:
 
         # test if table already exists
         database_name, table_name = table.split('.')
         tbl_exists = self.client.command(f"SELECT count() FROM system.tables WHERE database = '{database_name}' AND name = '{table_name}'") > 0
         if not tbl_exists or not append or show:
-            self.create_table(data_frame, table, primary_keys, schema, append, show)
+          self.create_table(data_frame, table, primary_keys, schema, append, show, replacing)
 
         self.client.insert_df(table, data_frame)
         print(f"Table saved: {table}")
