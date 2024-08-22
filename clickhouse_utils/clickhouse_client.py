@@ -140,7 +140,7 @@ class ClickhouseClient:
   
           create_table_query += f"{column} {column_type}, "
   
-      create_table_query = create_table_query.rstrip(", ") + f") ENGINE = {engin} ORDER BY ({primary_keys}) SETTINGS index_granularity = 8192"
+      create_table_query = create_table_query.rstrip(", ") + f") ENGINE = {engine} ORDER BY ({primary_keys}) SETTINGS index_granularity = 8192"
       
       if show:
           print(create_table_query)
