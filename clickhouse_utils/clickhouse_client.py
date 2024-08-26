@@ -7,13 +7,13 @@ from typing import List, Union
 
 # self = ClickhouseClient
 class ClickhouseClient:
-    def __init__(self):
-        self.host = os.getenv('CLICKHOUSE_HOST')
-        self.port = os.getenv('CLICKHOUSE_PORT')
-        self.user = os.getenv('CLICKHOUSE_USER')
-        self.password = os.getenv('CLICKHOUSE_PASSWORD')
+    def __init__(self, host = None, port = None, user = None, password = None, secure = None):
+        self.host = host or os.getenv('CLICKHOUSE_HOST')
+        self.port = port or os.getenv('CLICKHOUSE_PORT')
+        self.user = user or os.getenv('CLICKHOUSE_USER')
+        self.password = password or os.getenv('CLICKHOUSE_PASSWORD')
         self.default_password = os.getenv('CLICKHOUSE_DEFAULT_PASSWORD')
-        self.secure = os.getenv('CLICKHOUSE_SECURE')
+        self.secure = secure or os.getenv('CLICKHOUSE_SECURE')
         self.binary = os.getenv('CLICKHOUSE_BIN')
         # print(f"client = clickhouse_connect.get_client(host={self.host}, user={self.user}, password={self.password}, secure={self.secure})")
         self.client = clickhouse_connect.get_client(host=self.host, user=self.user, password=self.password, secure=self.secure)

@@ -13,6 +13,7 @@ def main():
 
     # Initialize Clickhouse client
     ch = clickhouse_client.ClickhouseClient()
+    ch = clickhouse_client.ClickhouseClient(user = "roger")
 
     # Example usage of ClickhouseClient methods
     ch.show_databases()
