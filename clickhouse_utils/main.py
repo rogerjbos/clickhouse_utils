@@ -146,27 +146,24 @@ def main():
     ch.query("select * from tiingo.ishares_dups")
   
   
-   [1] "ticker"      "date"        "close"       "high"        "low"         "open"        "volume"      "adjClose"    "adjHigh"     "adjLow"     
-[11] "adjOpen"     "adjVolume"   "divCash"     "splitFactor"
-
-  ch.command("""CREATE OR REPLACE TABLE tiingo.price_history
-  (
-      ticker String,
-      date DateTime,
-      close Float64,
-      high Float64,
-      low Float64,
-      open Float64,
-      volume Int64,
-      adjClose Float64,
-      adjHigh Float64,
-      adjLow Float64,
-      adjOpen Float64,
-      adjVolume Int64,
-      divCash Float64,
-      splitFactor Float64
-  ) ENGINE = ReplacingMergeTree() ORDER BY (ticker, date);""")
-  ch.query("select ticker, count(date) from tiingo.price_history group by ticker")
+  # ch.command("""CREATE OR REPLACE TABLE tiingo.price_history
+  # (
+  #     ticker String,
+  #     date DateTime,
+  #     close Float64,
+  #     high Float64,
+  #     low Float64,
+  #     open Float64,
+  #     volume Int64,
+  #     adjClose Float64,
+  #     adjHigh Float64,
+  #     adjLow Float64,
+  #     adjOpen Float64,
+  #     adjVolume Int64,
+  #     divCash Float64,
+  #     splitFactor Float64
+  # ) ENGINE = ReplacingMergeTree() ORDER BY (ticker, date);""")
+  # ch.query("select ticker, count(date) from tiingo.price_history group by ticker")
 
 
   
