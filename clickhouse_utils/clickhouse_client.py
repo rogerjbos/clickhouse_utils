@@ -34,7 +34,7 @@ class ClickhouseClient:
         client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(f"GRANT CREATE, ALTER, DROP, SHOW, INSERT, SELECT, UPDATE, DELETE, TRUNCATE, OPTIMIZE ON {database}.* TO {user};")
 
-    def grant_read_only(self, database: str) -> None:
+    def grant_read_only(self, database: str, user: str) -> None:
         client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(f"GRANT SELECT ON {database}.* TO {user};")
 
@@ -111,6 +111,7 @@ class ClickhouseClient:
           'B': 'Bool',
           'A': 'Array(String)',
           'D': "DateTime64 DEFAULT '1970-01-01'",
+          # 'V': "Variant",
           'L': 'LowCardinality(String)' 
       }
   

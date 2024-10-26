@@ -19,10 +19,11 @@ def main():
     ch.show_databases()
 
     # create a new database
-    ch.create_database("test")
+    ch.create_database("api_public")
     # grant access to the user
-    ch.grant_admin("test", "roger")
-
+    ch.grant_admin("api_public", "roger")
+    ch.grant_read_only("api_public", "api_user")
+    
     ch.show_tables("test")
 
     json = '{"customerId":1,"type":1,"custom_num1":4711}\n{"customerId":2, "type":2,"custom_ips":["127.0.0.1","127.0.0.2"]}'
