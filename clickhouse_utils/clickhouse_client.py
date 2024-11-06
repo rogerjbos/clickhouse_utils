@@ -154,11 +154,14 @@ class ClickhouseClient:
         # test if table already exists
         database_name, table_name = table.split('.')
         tbl_exists = self.client.command(f"SELECT count() FROM system.tables WHERE database = '{database_name}' AND name = '{table_name}'") > 0
-        if not tbl_exists or not append or show:
+        if not tbl_exists or not append:
           self.create_table(data_frame, table, primary_keys, schema, append, show, replacing)
 
-        self.client.insert_df(table, data_frame)
-        print(f"Table saved: {table}")
+        try:
+          summary = self.client.insert_df(table, data_frame)
+          print(f"Table saved: {table} rows: ", summary.written_rows)
+        except Exception as e:
+          print("An error occurred during insertion:", e)
 
     def from_csv(self, table: str, path: str, format: str = "CSVWithNames", admin: bool = False) -> None:  
         secure_str = '--secure' if self.secure==True else ''
