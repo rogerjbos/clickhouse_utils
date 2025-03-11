@@ -2,3 +2,4 @@ venv/
 .env
 *.pyc
 clickhouse_utils.egg-info/
+testing.py

@@ -166,15 +166,15 @@ class ClickhouseClient:
     def from_csv(self, table: str, path: str, format: str = "CSVWithNames", admin: bool = False) -> None:  
         secure_str = '--secure' if self.secure==True else ''
         if admin:
-          command = f'{self.binary} --host={self.host} --user=default --password={self.default_password} {secure_str} -q "INSERT INTO {table} FORMAT {format}" < {path}'
+          command = f'{self.binary} --host={self.host} --user=default --password="{self.default_password}" {secure_str} -q "INSERT INTO {table} FORMAT {format}" < {path}'
         else:
-          command = f'{self.binary} --host={self.host} --user={self.user} --password={self.password} {secure_str} -q "INSERT INTO {table} FORMAT {format}" < {path}'
+          command = f'{self.binary} --host={self.host} --user={self.user} --password="{self.password}" {secure_str} -q "INSERT INTO {table} FORMAT {format}" < {path}'
         result = subprocess.call(command, shell=True)
 
     def to_csv(self, query: str, path: str, format: str = "CSV", admin: bool = False) -> None:  
         secure_str = '--secure' if self.secure==True else ''
         if admin:
-          command = f'{self.binary} --host="{self.host}" --user=default --password={self.default_password} {secure_str} -q "{query}" --format={format} > {path}'
+          command = f'{self.binary} --host="{self.host}" --user=default --password="{self.default_password}" {secure_str} -q "{query}" --format={format} > {path}'
         else:
-          command = f'{self.binary} --host="{self.host}" --user={self.user} --password={self.password} {secure_str} -q "{query}" --format={format} > {path}'
+          command = f'{self.binary} --host="{self.host}" --user={self.user} --password="{self.password}" {secure_str} -q "{query}" --format={format} > {path}'
         result = subprocess.call(command, shell=True)
