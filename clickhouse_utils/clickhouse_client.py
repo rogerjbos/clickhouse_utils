@@ -4,7 +4,8 @@ import pandas as pd
 import subprocess
 import clickhouse_connect
 import uuid
-from typing import List, Union
+from typing import List, Union, Sequence, Dict, Any, List
+from datetime import tzinfo
 
 # self = ClickhouseClient
 class ClickhouseClient:
