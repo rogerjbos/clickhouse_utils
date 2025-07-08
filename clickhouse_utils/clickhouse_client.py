@@ -19,7 +19,7 @@ class ClickhouseClient:
         self.binary = binary or os.getenv('CLICKHOUSE_BIN')
         session_id = str(uuid.uuid4())
         # print(f"client = clickhouse_connect.get_client(host={self.host}, user={self.user}, password={self.password}, secure={self.secure})")
-        self.client = clickhouse_connect.get_client(host=self.host, user=self.user, password=self.password, secure=self.secure, session_id=session_id)
+        self.client = clickhouse_connect.get_client(host=self.host, port=self.port, user=self.user, password=self.password, secure=self.secure, session_id=session_id)
 
     @staticmethod
     def is_list_column(column: pd.Series) -> bool:
