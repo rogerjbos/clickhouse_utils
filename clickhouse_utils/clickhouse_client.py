@@ -74,11 +74,11 @@ class ClickhouseClient:
         return self.client.command(f"SELECT count() FROM system.tables WHERE database = '{database}' AND name = '{table}'") > 0
 
     def query(self, txt: str) -> pd.DataFrame:
-        return self.client.query_df(txt)
+        return self.client.query_df(txt, settings={"session_id": str(uuid.uuid4())})
 
     def command(self, txt: str) -> None:
-        self.client.command(txt)
-
+        self.client.command(txt, settings={"session_id": str(uuid.uuid4())})
+    
     def command_admin(self, txt: str) -> None:
         client = clickhouse_connect.get_client(host=self.host, user='default', password=self.default_password, secure=self.secure)
         client.command(txt)
