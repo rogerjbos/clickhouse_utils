@@ -114,7 +114,7 @@ class ClickhouseClient:
           'B': 'Bool',
           'A': 'Array(String)',
           'D': "DateTime64 DEFAULT '1970-01-01'",
-          'd': "Date DEFAULT '1970-01-01'",
+          'd': "Date32 DEFAULT '1970-01-01'",
           # 'V': "Variant",
           'L': 'LowCardinality(String)' 
       }
